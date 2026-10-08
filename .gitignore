@@ -1,0 +1,17 @@
+.worktrees/
+downloads/
+tmp/
+.env*
+__pycache__/
+*.pyc
+/feishu_credentials.md
+/feishu_credentials.json
+credentials*.json
+*.response.json
+*.ogg
+*.mp3
+*.m4a
+*.wav
+*.mp4
+*.webm
+.DS_Store

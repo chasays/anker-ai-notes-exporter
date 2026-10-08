@@ -47,21 +47,27 @@ npm install -g @larksuite/cli
 在飞书开放平台创建或使用自己的应用。复制示例文件，并填入自己的值：
 
 ```bash
-cp feishu_credentials.example.md feishu_credentials.md
+cp .env.example .env
 # macOS / Linux：限制明文配置文件访问权限
-chmod 600 feishu_credentials.md
+chmod 600 .env
 ```
 
 格式如下：
 
-```text
-App ID
-YOUR_APP_ID
-App Secret
-YOUR_APP_SECRET
+```dotenv
+APP_ID="YOUR_APP_ID"
+APP_SECRET="YOUR_APP_SECRET"
 ```
 
-也支持 JSON 的 `app_id` / `app_secret` 字段，以及 `APP_ID=...` / `APP_SECRET=...` 格式。凭据是明文，只留在本机。本地配置和默认导出目录已被 `.gitignore` 排除。
+脚本默认读取自身目录下的 `.env`，支持注释、单/双引号以及可选的 `export` 前缀，不执行文件或展开变量。含空格、`#` 的值请加引号；这不是完整的 dotenv 插值实现，也不会自动读取 shell 环境变量。
+
+真实 `.env` 是明文，只留在本机，已被 `.gitignore` 排除；仓库只提交占位符模板 `.env.example`。用户 OAuth token 仍由 CLI 管理。
+
+旧 Markdown 和 JSON 配置仍可通过 `--credentials` 显式使用，例如：
+
+```bash
+python3 feishu_export.py --profile anker-export --credentials feishu_credentials.md
+```
 
 ### 3. 配置 CLI 并授权
 

@@ -10,7 +10,7 @@ import feishu_export as export
 class CredentialTests(unittest.TestCase):
     def test_default_credentials_are_local_to_script(self):
         self.assertEqual(export.DEFAULT_CREDENTIALS,
-                         Path(export.__file__).resolve().parent / 'feishu_credentials.md')
+                         Path(export.__file__).resolve().parent / '.env')
 
     def parse(self, text):
         with tempfile.TemporaryDirectory() as folder:
@@ -26,6 +26,18 @@ class CredentialTests(unittest.TestCase):
         for text in ['{"app_id":"cli_test123","app_secret":"test-secret"}',
                      'APP_ID=cli_test123\nAPP_SECRET=test-secret']:
             self.assertEqual(self.parse(text), ('cli_test123', 'test-secret'))
+
+    def test_dotenv_comments_quotes_and_export(self):
+        self.assertEqual(self.parse(
+            '# Local application credentials\n'
+            'export APP_ID=cli_test123 # application\n'
+            'APP_SECRET="test # secret" # keep the quoted hash\n'),
+            ('cli_test123', 'test # secret'))
+
+    def test_dotenv_values_are_not_interpolated(self):
+        self.assertEqual(self.parse(
+            "APP_ID='cli_test123'\nAPP_SECRET='literal-$HOME-#secret'\n"),
+            ('cli_test123', 'literal-$HOME-#secret'))
 
     def test_missing_secret_is_not_echoed(self):
         with self.assertRaises(export.ExportError) as cm:

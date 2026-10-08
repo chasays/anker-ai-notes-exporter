@@ -2,6 +2,7 @@
 downloads/
 tmp/
 .env*
+!.env.example
 __pycache__/
 *.pyc
 /feishu_credentials.md

@@ -17,6 +17,7 @@ import math
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import socket
 import ssl
@@ -27,7 +28,7 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_CREDENTIALS = ROOT / 'feishu_credentials.md'
+DEFAULT_CREDENTIALS = ROOT / '.env'
 MEDIA_HOSTS = {'internal-api-drive-stream.feishu.cn',
                'internal-api-drive-stream.larksuite.com'}
 BENCHMARK = ipaddress.ip_network('198.18.0.0/15')
@@ -38,7 +39,7 @@ class ExportError(Exception):
 
 
 def credentials(path):
-    """JSON, KEY=value or four-line Markdown App ID / value / App Secret / value."""
+    """Local .env, legacy JSON or four-line Markdown credentials; no interpolation."""
     try:
         text = Path(path).read_text(encoding='utf-8-sig')
     except OSError:
@@ -52,6 +53,18 @@ def credentials(path):
     except ValueError:
         pending = None
         for line in text.splitlines():
+            assignment = re.match(r'^\s*(?:export\s+)?(APP_ID|APP_SECRET)\s*=\s*(.*)$', line, re.I)
+            if assignment:
+                try:
+                    parts = shlex.split(assignment[2], comments=True, posix=True)
+                except ValueError:
+                    raise ExportError('凭据格式不正确：检查 .env 引号；不会打印文件内容。') from None
+                if len(parts) > 1:
+                    raise ExportError('凭据格式不正确：包含空格的值需要引号；不会打印文件内容。')
+                key = assignment[1].lower().replace('_', '')
+                values[key] = parts[0] if parts else ''
+                pending = None
+                continue
             line = line.strip().strip(chr(96)).strip()
             if not line:
                 continue
@@ -489,7 +502,7 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--credentials', type=Path, default=DEFAULT_CREDENTIALS,
-                        help='App ID/Secret 文件；支持现有 tmp.md 或 JSON')
+                        help='App ID/Secret 文件，默认脚本旁 .env；兼容旧 Markdown 或 JSON')
     parser.add_argument('--identity', choices=['user', 'bot'], default='user')
     parser.add_argument('--profile', help='现有 CLI profile，不改变默认 profile')
     parser.add_argument('--date', default=date.today().isoformat(), help='录音日期，默认今天')
